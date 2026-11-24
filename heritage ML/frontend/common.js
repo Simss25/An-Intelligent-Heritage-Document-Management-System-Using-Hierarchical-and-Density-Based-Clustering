@@ -1,0 +1,13 @@
+const API_DEFAULT='http://127.0.0.1:5000';
+const API=localStorage.getItem('readingroom_api')||API_DEFAULT;
+const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nav=[['index.html','⌂','Overview'],['shelves.html','▦','Collections'],['explorer.html','◉','Document explorer'],['review.html','⚑','Review desk'],['analytics.html','▥','Analytics'],['import.html','⇧','Import data'],['about.html','ⓘ','About & ethics']];
+function shell(){let current=location.pathname.split('/').pop()||'index.html';document.body.innerHTML=`<div class="layout"><aside class="sidebar"><div class="brand"><small>Heritage intelligence</small><h1>Reading Room</h1><p>Document discovery platform</p></div><div class="navlabel">Workspace</div><nav class="nav">${nav.map(([u,i,t])=>`<a class="${current===u?'active':''}" href="${u}"><span class="ico">${i}</span>${t}</a>`).join('')}</nav><div class="sidefoot">Prototype workspace<br>Local analysis environment</div></aside><main class="main"><div class="topbar"><div class="crumb">WORKSPACE / ${current.replace('.html','').replace('-',' ').toUpperCase()}</div><div class="topright"><span class="status" id="api-status">● Connecting to engine</span><div class="avatar">RR</div></div></div><div id="app"></div><div class="footer">Reading Room · Intelligent Heritage Document Management · Human review remains essential.</div></main></div>`;health();}
+async function api(path,opts={}){let r=await fetch((localStorage.getItem('readingroom_api')||API_DEFAULT)+path,opts);if(!r.ok)throw Error((await r.text()).slice(0,250)||`HTTP ${r.status}`);let ct=r.headers.get('content-type')||'';return ct.includes('json')?r.json():r.text();}
+async function health(){try{let h=await api('/api/health');$('#api-status').textContent=`● Engine online · ${h.n_docs} records`;$('#api-status').className='status'}catch(e){$('#api-status').textContent='● Engine offline';$('#api-status').className='status warn'}}
+function heading(kicker,title,desc,action=''){return `<div class="heading"><div><div class="eyebrow">${kicker}</div><h2>${title}</h2><p>${desc}</p></div>${action}</div>`}
+function stat(label,value,note){return `<div class="card"><div class="statlabel">${label}</div><div class="statvalue">${value??'—'}</div><div class="statnote">${note||''}</div></div>`}
+function fmt(v,d=2){return v==null?'—':Number(v).toFixed(d)}
+async function loadAnalysis(){return api('/api/analysis')}async function loadDocs(){return api('/api/documents')}
+function showError(e){$('#app').insertAdjacentHTML('afterbegin',`<div class="notice error">Unable to load project data: ${esc(e.message)}. Start the C++ backend and refresh.</div>`)}
+shell();
